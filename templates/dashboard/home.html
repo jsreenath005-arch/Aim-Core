@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | AIM CORE{% endblock %}
+
+{% block content %}
+<main class="dashboard-page py-5">
+    <div class="container">
+        <div class="dashboard-heading d-flex justify-content-between align-items-end mb-4">
+            <div><span class="eyebrow blue-eyebrow">CONTROL CENTER</span><h1 class="mt-2">Admin dashboard</h1><p class="text-muted mb-0">Manage your catalog, customers, and orders.</p></div>
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">View home page</a>
+        </div>
+        {% if messages %}{% for message in messages %}<div class="alert alert-primary">{{ message }}</div>{% endfor %}{% endif %}
+        <div class="row g-3 mb-5">
+            <div class="col-md-4"><div class="dashboard-stat"><span>PRODUCTS</span><strong>{{ product_count }}</strong><a href="#products">Manage catalog →</a></div></div>
+            <div class="col-md-4"><div class="dashboard-stat"><span>USERS</span><strong>{{ user_count }}</strong><a href="#users">Manage users →</a></div></div>
+            <div class="col-md-4"><div class="dashboard-stat"><span>ORDERS</span><strong>{{ order_count }}</strong><a href="#orders">Manage orders →</a></div></div>
+        </div>
+
+        <section id="orders" class="dashboard-section mb-5">
+            <div class="section-heading d-flex justify-content-between align-items-end mb-3"><div><span class="eyebrow blue-eyebrow">FULFILLMENT</span><h2 class="mt-2">Customer orders</h2></div><a href="{% url 'dashboard:order_report' %}" class="btn btn-outline-primary">Download order report</a></div>
+            <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Update status</th></tr></thead><tbody>
+                {% for order in orders %}{% with payment=order.payments.first %}<tr>
+                    <td><strong>#{{ order.order_id }}</strong><small>{{ order.order_date|date:'d M Y, H:i' }}</small></td>
+                    <td><strong>{{ order.user.name|default:order.user.email }}</strong><small>{{ order.user.email }}{% if order.user.phone %} · {{ order.user.phone }}{% endif %}</small></td>
+                    <td>{% for item in order.items.all %}{{ item.product.product_name }} × {{ item.quantity }}{% if not forloop.last %}, {% endif %}{% empty %}No items{% endfor %}</td>
+                    <td>₹{{ order.total_amount }}</td>
+                    <td>{{ order.status|title }}</td>
+                    <td>{% if payment %}<strong>{{ payment.payment_method_label }} · {{ payment.payment_status_label }}</strong>{% if payment.reference %}<small>Reference: {{ payment.reference }}</small>{% endif %}{% if payment.payment_status == 'pending' %}<form method="post" action="{% url 'dashboard:payment_confirm' payment.payment_id %}" class="mt-2">{% csrf_token %}<label class="visually-hidden" for="payment-reference-{{ payment.payment_id }}">Verified transaction reference</label><input id="payment-reference-{{ payment.payment_id }}" name="reference" class="form-control form-control-sm mb-1" maxlength="200" placeholder="Verified transaction reference"><button type="submit" class="btn btn-sm btn-success">Confirm payment</button></form>{% endif %}{% else %}No payment record{% endif %}</td>
+                    <td><form method="post" action="{% url 'dashboard:order_status_update' order.order_id %}" class="d-flex gap-2 align-items-center">{% csrf_token %}<select name="status" class="form-select form-select-sm" aria-label="Status for order {{ order.order_id }}">{% for status in order_statuses %}<option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status|title }}</option>{% endfor %}</select><button type="submit" class="btn btn-sm btn-primary">Save</button></form></td>
+                </tr>{% endwith %}{% empty %}<tr><td colspan="7">No orders found.</td></tr>{% endfor %}
+            </tbody></table></div>
+        </section>
+
+        <section id="products" class="dashboard-section mb-5">
+            <div class="section-heading d-flex justify-content-between align-items-end mb-3"><div><span class="eyebrow blue-eyebrow">CATALOG</span><h2 class="mt-2">Products</h2></div><a href="{% url 'dashboard:product_create' %}" class="btn btn-primary">+ Add product</a></div>
+            <div class="dashboard-table-wrap">
+                <table class="dashboard-table product-dashboard-table">
+                    <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td><strong>{{ product.product_name }}</strong><small>{{ product.brand }}</small></td>
+                            <td>{{ product.category.category_name }}</td>
+                            <td>₹{{ product.price }}</td>
+                            <td>{{ product.stock }}</td>
+                            <td class="table-actions">
+                                <a href="{% url 'dashboard:product_edit' product.product_id %}">Edit details</a>
+                                <form method="post" action="{% url 'dashboard:product_delete' product.product_id %}">{% csrf_token %}<button type="submit">Delete</button></form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5">No products found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="payments" class="dashboard-section mb-5">
+            <div class="section-heading d-flex justify-content-between align-items-end mb-3"><div><span class="eyebrow blue-eyebrow">PAYMENTS</span><h2 class="mt-2">QR Payment Codes</h2></div></div>
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="blue-panel p-4">
+                        <h4>UPI payment gateway</h4>
+                        <form method="post" action="{% url 'dashboard:upi_settings_update' %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">UPI ID</label>
+                                <input type="text" name="upi_id" class="form-control" value="{{ upi_settings.upi_id|default:'gamingmouse@upi' }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Supported apps</label>
+                                <input type="text" name="supported_apps" class="form-control" value="{{ upi_settings.supported_apps|default:'GPay, PhonePe, Paytm, Navi, BHIM, Other UPI' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">QR Image</label>
+                                <input type="file" name="qr_code" class="form-control" accept="image/*">
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" name="is_active" class="form-check-input" {% if upi_settings.is_active %}checked{% endif %}>
+                                <label class="form-check-label">Enable this UPI gateway</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save UPI settings</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="blue-panel p-4">
+                        <h4>Active QR codes</h4>
+                        {% if upi_settings %}
+                            <div class="d-flex align-items-center gap-3 border rounded p-3 mb-3">
+                                {% if upi_settings.qr_code %}<img src="{{ upi_settings.qr_code.url }}" alt="UPI QR code" style="width: 110px; height: 110px; object-fit: contain; border-radius: 12px; background: white;">{% endif %}
+                                <div>
+                                    <strong>UPI ID:</strong> {{ upi_settings.upi_id }}
+                                    <div class="small text-muted mt-1">Apps: {{ upi_settings.supported_apps }}</div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">No UPI payment gateway configured yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="users" class="dashboard-section">
+            <div class="section-heading d-flex justify-content-between align-items-end mb-3"><div><span class="eyebrow blue-eyebrow">ACCOUNTS</span><h2 class="mt-2">Users</h2></div><a href="{% url 'dashboard:user_create' %}" class="btn btn-primary">+ Add user</a></div>
+            <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>User</th><th>Role</th><th>Staff</th><th>Status</th><th>Actions</th></tr></thead><tbody>{% for managed_user in users %}<tr><td><strong>{{ managed_user.name|default:managed_user.email }}</strong><small>{{ managed_user.email }}</small></td><td>{{ managed_user.role|title }}</td><td>{% if managed_user.is_staff %}Yes{% else %}No{% endif %}</td><td>{% if managed_user.is_active %}Active{% else %}Inactive{% endif %}</td><td class="table-actions"><a href="{% url 'dashboard:user_edit' managed_user.user_id %}">Edit</a>{% if managed_user != user %}<form method="post" action="{% url 'dashboard:user_delete' managed_user.user_id %}">{% csrf_token %}<button type="submit">Delete</button></form>{% endif %}</td></tr>{% empty %}<tr><td colspan="5">No users found.</td></tr>{% endfor %}</tbody></table></div>
+        </section>
+    </div>
+</main>
+l..ngh,,,{% endblock %}

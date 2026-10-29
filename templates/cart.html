@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Cart | AIM CORE{% endblock %}
+
+{% block content %}
+<main class="inner-page">
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><span class="eyebrow">YOUR LOADOUT</span><h2 class="mb-0 mt-2">Your Cart</h2></div>
+        <span class="badge text-bg-dark">{{ total_quantity }} item{{ total_quantity|pluralize }}</span>
+    </div>
+    {% if items %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="cart-panel shadow-sm">
+                {% for item in items %}
+                <div class="cart-line">
+                    {% if item.product.image_url %}<img src="{{ item.product.image_url }}" alt="{{ item.product.product_name }}">
+                    {% elif item.product.image %}<img src="{{ item.product.image.url }}" alt="{{ item.product.product_name }}">{% endif %}
+                    <div class="flex-grow-1">
+                        <span class="product-brand">{{ item.product.brand }}</span>
+                        <h5 class="mb-1">{{ item.product.product_name }}</h5>
+                        <span class="text-muted">₹{{ item.product.price }} each</span>
+                    </div>
+                    <form method="post" action="{% url 'update_cart_item' item.cart_item_id %}" class="quantity-form">
+                        {% csrf_token %}
+                        <label for="quantity-{{ item.cart_item_id }}" class="visually-hidden">Quantity</label>
+                        <input id="quantity-{{ item.cart_item_id }}" type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}">
+                        <button type="submit" class="btn btn-sm btn-outline-dark">Update</button>
+                    </form>
+                    <strong class="cart-subtotal">₹{{ item.subtotal }}</strong>
+                    <form method="post" action="{% url 'remove_from_cart' item.cart_item_id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="remove-button" aria-label="Remove {{ item.product.product_name }}">×</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="cart-summary shadow-sm">
+                <form method="post" action="{% url 'checkout' %}">
+                    {% csrf_token %}
+                    <span class="eyebrow">ORDER SUMMARY</span>
+                    <div class="d-flex justify-content-between mt-3"><span>Subtotal</span><strong>₹{{ total|floatformat:2 }}</strong></div>
+                    <div class="d-flex justify-content-between text-muted"><span>Delivery</span><span>Free</span></div>
+                    <hr>
+                    <div class="d-flex justify-content-between fs-5"><strong>Total</strong><strong>₹{{ total|floatformat:2 }}</strong></div>
+
+                    <h4 class="mt-4">Shipping Details</h4>
+                    <div class="mb-3">
+                        <label class="form-label" for="checkout-name">Full Name</label>
+                        <input id="checkout-name" type="text" class="form-control" value="{{ request.user.name }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="shipping-address">Address</label>
+                        <textarea id="shipping-address" name="shipping_address" class="form-control" rows="3" placeholder="Your complete delivery address" required>{{ request.user.address }}</textarea>
+                    </div>
+                    <fieldset class="mb-3">
+                        <legend class="form-label">Payment Method</legend>
+                        <div class="payment-option-list">
+                            <label class="payment-option active">
+                                <input type="radio" name="payment_method" value="upi" checked>
+                                <span>UPI</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="payment_method" value="cod">
+                                <span>Cash on Delivery</span>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <p class="small text-muted">UPI payments stay pending until an admin verifies receipt. Cash on Delivery payments can be confirmed after delivery.</p>
+
+                    <div id="upi-gateway" class="mt-4 border rounded p-3 bg-light">
+                        <h5 class="mb-3">Pay by UPI</h5>
+                        <p class="small text-muted">Pay using the UPI ID or QR code below, then place your order. Your order will remain pending until payment is verified.</p>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Choose your UPI app</label>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                {% if upi_settings and upi_settings.apps %}
+                                    {% for app in upi_settings.apps %}
+                                        <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="{{ app }}">{{ app }}</button>
+                                    {% endfor %}
+                                {% else %}
+                                    <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="GPay">GPay</button>
+                                    <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="PhonePe">PhonePe</button>
+                                    <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="Paytm">Paytm</button>
+                                    <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="Navi">Navi</button>
+                                    <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="BHIM">BHIM</button>
+                                    <button type="button" class="upi-app-btn btn btn-sm btn-outline-primary" data-app="Other UPI">Other UPI</button>
+                                {% endif %}
+                            </div>
+                            <input type="hidden" id="payment_gateway" name="payment_gateway" value="">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">UPI ID</label>
+                            <div class="border rounded p-2 bg-white">{{ upi_settings.upi_id|default:'gamingmouse@upi' }}</div>
+                        </div>
+                        {% if qr_codes or upi_settings.qr_code %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Scan QR code</label>
+                            {% if upi_settings and upi_settings.qr_code %}
+                            <div class="d-flex align-items-center gap-3 mt-2 p-2 border rounded bg-white">
+                                <img src="{{ upi_settings.qr_code.url }}" alt="UPI QR code" style="width: 120px; height: 120px; object-fit: contain; background: white; border-radius: 12px; border: 1px solid #dfe6f7;">
+                            </div>
+                            {% else %}
+                                {% for qr in qr_codes %}
+                                <div class="d-flex align-items-center gap-3 mt-2 p-2 border rounded bg-white">
+                                    {% if qr.qr_code %}<img src="{{ qr.qr_code.url }}" alt="{{ qr.title }}" style="width: 120px; height: 120px; object-fit: contain; background: white; border-radius: 12px; border: 1px solid #dfe6f7;">{% endif %}
+                                    <div>
+                                        <strong>{{ qr.title }}</strong>
+                                        {% if qr.notes %}<div class="small text-muted mt-1">{{ qr.notes }}</div>{% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">Place Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-cart text-center shadow-sm">
+        <div class="empty-cart-icon">+</div>
+        <h3>Your cart is empty</h3>
+        <p class="text-muted">Your next great setup starts with one good mouse.</p>
+        {% if not user.is_authenticated %}<p class="text-muted">Sign in to save products to your cart.</p>{% endif %}
+        <a href="{% url 'product_list' %}" class="btn btn-primary mt-2">Browse Gaming Mice</a>
+    </div>
+    {% endif %}
+</div>
+</main>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentOptions = document.querySelectorAll('input[name="payment_method"]');
+        const upiGateway = document.getElementById('upi-gateway');
+        const gatewayInput = document.getElementById('payment_gateway');
+        const upiButtons = document.querySelectorAll('.upi-app-btn');
+        if (!upiGateway || !gatewayInput) {
+            return;
+        }
+
+        function setSelectedUpiApp(appName) {
+            gatewayInput.value = appName;
+            upiButtons.forEach(function (btn) {
+                const isSelected = btn.dataset.app === appName;
+                btn.classList.toggle('btn-primary', isSelected);
+                btn.classList.toggle('btn-outline-primary', !isSelected);
+            });
+        }
+
+        function togglePaymentPanels() {
+            const selectedOption = document.querySelector('input[name="payment_method"]:checked');
+            const selected = selectedOption ? selectedOption.value : 'upi';
+            upiGateway.style.display = selected === 'upi' ? 'block' : 'none';
+            if (selected !== 'upi') {
+                gatewayInput.value = '';
+            }
+        }
+
+        paymentOptions.forEach(function (option) {
+            option.addEventListener('change', togglePaymentPanels);
+        });
+        upiButtons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                setSelectedUpiApp(btn.dataset.app);
+            });
+        });
+        const firstSelected = document.querySelector('input[name="payment_method"]:checked');
+        if (firstSelected && firstSelected.value === 'upi') {
+            setSelectedUpiApp(upiButtons[0]?.dataset.app || 'GPay');
+        }
+        togglePaymentPanels();
+    });
+</script>
+{% endblock %}

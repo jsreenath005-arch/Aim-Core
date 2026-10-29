@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | AIM CORE{% endblock %}
+
+{% block content %}
+<main class="dashboard-page py-5"><div class="container"><div class="form-page-heading"><a href="{% url 'dashboard:home' %}" class="back-link">← Dashboard</a><span class="eyebrow blue-eyebrow">ACCOUNT CONTROL</span><h1>{{ title }}</h1></div><form method="post" class="dashboard-form">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="btn btn-primary" type="submit">Save user</button><a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary">Cancel</a></div></form></div></main>
+{% endblock %}

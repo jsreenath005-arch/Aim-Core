@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Products | GamingMouse{% endblock %}
+
+{% block content %}
+<main class="catalog-page">
+<div class="catalog-header">
+    <div class="container py-5">
+        <span class="eyebrow blue-eyebrow">AIM CORE COLLECTION</span>
+        <h1 class="display-4 mt-2">{% if search_query %}Search results{% elif selected_category %}{{ selected_category.category_name }}{% else %}Gaming mice{% endif %}</h1>
+        <p class="catalog-intro">Performance tools for players who care about every movement.</p>
+    </div>
+</div>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="eyebrow">{% if selected_category %}PLAY STYLE{% else %}THE COLLECTION{% endif %}</span>
+            <h2>{% if search_query %}Results for “{{ search_query }}”{% elif selected_category %}{{ selected_category.category_name }} mice{% else %}All Products{% endif %}</h2>
+            {% if selected_category %}<p class="text-muted mb-0">{{ selected_category.description }}</p>{% endif %}
+        </div>
+        {% if selected_category %}<a href="{% url 'product_list' %}" class="btn btn-outline-dark">View all</a>{% endif %}
+    </div>
+
+    <div class="row g-4 catalog-grid">
+        {% for product in products %}
+        <div class="col-md-4 d-flex">
+            <div class="catalog-product-card h-100">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.product_name }}" style="height: 240px; object-fit: cover;">
+                    {% elif product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.product_name }}" style="height: 240px; object-fit: cover;">
+                {% else %}
+                    <img src="https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&w=800&q=80" class="card-img-top" alt="Product image" style="height: 240px; object-fit: cover;">
+                {% endif %}
+                <div class="catalog-product-body">
+                    <span class="product-brand">{{ product.brand }}</span>
+                    <p class="catalog-product-subtitle">{{ product.subtitle|default_if_none:'' }}</p>
+                    <div class="catalog-discount-slot">{% if product.discount_percentage %}<span class="badge text-bg-danger">{{ product.discount_percentage|floatformat:'0' }}% OFF</span>{% endif %}</div>
+                    <p class="fw-bold text-primary mb-2">{% if product.discount_percentage %}<del class="text-muted fw-normal me-1">₹{{ product.price }}</del>₹{{ product.discounted_price|floatformat:2 }}{% else %}₹{{ product.price }}{% endif %}</p>
+                    <div class="catalog-product-actions d-flex justify-content-between align-items-center">
+                        <span class="badge text-bg-light">Stock: {{ product.stock }}</span>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'product_detail' product.product_id %}" class="btn btn-sm btn-outline-dark">Details</a>
+                            {% if product.stock > 0 and not user.is_staff %}
+                            <form method="post" action="{% url 'add_to_cart' product.product_id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{% url 'product_list' %}">
+                                <button class="btn btn-sm btn-primary" type="submit">Add</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center text-muted">No products found.</div>
+        {% endfor %}
+    </div>
+</div>
+</main>
+{% endblock %}

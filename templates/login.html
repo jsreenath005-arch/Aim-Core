@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | GamingMouse{% endblock %}
+
+{% block content %}
+<main class="auth-page blue-auth-page login-page">
+    <div class="auth-overlay"></div>
+    <div class="container position-relative py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-5 col-lg-4">
+                <div class="auth-card shadow-lg">
+                    <div class="card-body p-4 p-lg-5">
+                        <span class="eyebrow">WELCOME BACK</span>
+                        <h3 class="mb-2 mt-2">Enter the arena</h3>
+                        <p class="text-muted mb-4">Sign in to manage your gaming setup.</p>
+                        {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+                        <div class="mb-3">
+                            <label class="form-label" for="login-identifier">Username or email <span class="required-mark" aria-hidden="true">*</span></label>
+                                <input id="login-identifier" type="text" name="email" class="form-control{% if identifier_error %} is-invalid{% endif %}" placeholder="Enter username or email" maxlength="254" autocomplete="username" aria-required="true" {% if identifier_error %}aria-invalid="true" aria-describedby="login-identifier-error"{% endif %} required>
+                                {% if identifier_error %}<div id="login-identifier-error" class="invalid-feedback">{{ identifier_error }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="login-password">Password <span class="required-mark" aria-hidden="true">*</span></label>
+                                <input id="login-password" type="password" name="password" class="form-control{% if password_error %} is-invalid{% endif %}" placeholder="Enter password" autocomplete="current-password" aria-required="true" {% if password_error %}aria-invalid="true" aria-describedby="login-password-error"{% endif %} required>
+                                {% if password_error %}<div id="login-password-error" class="invalid-feedback">{{ password_error }}</div>{% endif %}
+                        </div>
+                        <div class="text-end mb-3"><a href="{% url 'password_reset' %}">Forgot password?</a></div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                        <p class="text-center text-muted mt-4 mb-0">Don't have an account? <a href="{% url 'register' %}">Create an account</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

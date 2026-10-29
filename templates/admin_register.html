@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Registration | GamingMouse{% endblock %}
+
+{% block content %}
+<main class="auth-page register-page blue-auth-page">
+    <div class="auth-overlay"></div>
+    <div class="container position-relative py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-6">
+                <div class="auth-card shadow-lg">
+                    <div class="card-body p-4 p-lg-5">
+                        <span class="eyebrow">ADMIN ACCESS</span>
+                        <h3 class="mb-2 mt-2">Create admin account</h3>
+                        <p class="text-muted mb-4">Register an account with access to product management.</p>
+                        {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="admin-register-username">Username <span class="required-mark" aria-hidden="true">*</span></label>
+                                    <input id="admin-register-username" type="text" name="username" class="form-control" maxlength="150" autocomplete="username" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="admin-register-name">Full Name <span class="required-mark" aria-hidden="true">*</span></label>
+                                    <input id="admin-register-name" type="text" name="name" class="form-control" minlength="2" maxlength="255" autocomplete="name" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="admin-register-email">Email <span class="required-mark" aria-hidden="true">*</span></label>
+                                    <input id="admin-register-email" type="email" name="email" class="form-control" maxlength="254" autocomplete="email" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="admin-register-password">Password <span class="required-mark" aria-hidden="true">*</span></label>
+                                    <input id="admin-register-password" type="password" name="password" class="form-control" minlength="8" autocomplete="new-password" aria-describedby="admin-register-password-feedback" data-password-strength required>
+                                    <div id="admin-register-password-feedback" class="password-feedback" data-strength="empty" hidden>
+                                        <div class="password-strength-header"><span>Password strength</span><strong data-strength-label role="status" aria-live="polite">Enter a password</strong></div>
+                                        <div class="password-strength-track" role="progressbar" aria-label="Password strength" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><span class="password-strength-fill" data-strength-meter></span></div>
+                                        <ul class="password-rules">
+                                            <li data-password-rule="length"><span data-rule-state>Not met</span> At least 8 characters</li>
+                                            <li data-password-rule="letter"><span data-rule-state>Not met</span> At least one letter</li>
+                                            <li data-password-rule="uppercase"><span data-rule-state>Not met</span> At least one uppercase letter</li>
+                                            <li data-password-rule="number"><span data-rule-state>Not met</span> At least one number</li>
+                                            <li data-password-rule="special"><span data-rule-state>Not met</span> At least one special character</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="admin-register-confirmation">Confirm Password <span class="required-mark" aria-hidden="true">*</span></label>
+                                    <input id="admin-register-confirmation" type="password" name="confirmation" class="form-control" minlength="8" autocomplete="new-password" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-4">Create Admin Account</button>
+                        </form>
+                        <p class="text-center text-muted mt-4 mb-0">Already registered? <a href="{% url 'admin_login' %}">Admin login</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

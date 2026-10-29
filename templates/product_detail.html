@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.product_name }} | AIM CORE{% endblock %}
+
+{% block content %}
+<main class="product-detail-page">
+    <div class="product-detail-hero">
+        <div class="container py-4">
+            <nav class="product-breadcrumb"><a href="{% url 'home' %}">Home</a><span>/</span><a href="{% url 'product_list' %}">Products</a><span>/</span><strong>{{ product.product_name }}</strong></nav>
+        </div>
+    </div>
+    <div class="container product-detail-content py-5">
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-7">
+                <div class="product-stage">
+                    <span class="stage-label">AIM CORE / {{ product.category.category_name|upper }}</span>
+            {% if product.image_url %}
+                <img src="{{ product.image_url }}" class="product-stage-image" alt="{{ product.product_name }}" data-product-main-image>
+            {% elif product.image %}
+                <img src="{{ product.image.url }}" class="product-stage-image" alt="{{ product.product_name }}" data-product-main-image>
+            {% elif product.additional_images.all %}
+                <img src="{{ product.additional_images.all.0.image.url }}" class="product-stage-image" alt="{{ product.product_name }}" data-product-main-image>
+            {% else %}
+                <img src="https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&w=800&q=80" class="product-stage-image" alt="Product image" data-product-main-image>
+            {% endif %}
+                    <span class="stage-status{% if not product.stock %} is-out-of-stock{% endif %}">
+                        {% if product.stock %}● IN STOCK · {{ product.stock }} AVAILABLE{% else %}● OUT OF STOCK{% endif %}
+                    </span>
+                </div>
+                {% with additional_images=product.additional_images.all %}
+                    {% if additional_images %}
+                    <div class="product-image-gallery" aria-label="Product images">
+                        {% if product.image_url %}
+                        <button type="button" class="product-image-thumbnail is-active" data-gallery-src="{{ product.image_url }}" data-gallery-alt="{{ product.product_name }}" aria-label="View primary product image" aria-pressed="true">
+                            <img src="{{ product.image_url }}" alt="">
+                        </button>
+                        {% elif product.image %}
+                        <button type="button" class="product-image-thumbnail is-active" data-gallery-src="{{ product.image.url }}" data-gallery-alt="{{ product.product_name }}" aria-label="View primary product image" aria-pressed="true">
+                            <img src="{{ product.image.url }}" alt="">
+                        </button>
+                        {% endif %}
+                        {% for product_image in additional_images %}
+                        <button type="button" class="product-image-thumbnail{% if not product.image_url and not product.image and forloop.first %} is-active{% endif %}" data-gallery-src="{{ product_image.image.url }}" data-gallery-alt="{{ product.product_name }} image {{ forloop.counter }}" aria-label="View product image {{ forloop.counter }}" aria-pressed="{% if not product.image_url and not product.image and forloop.first %}true{% else %}false{% endif %}">
+                            <img src="{{ product_image.image.url }}" alt="">
+                        </button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div class="col-lg-5">
+                <div class="product-buy-panel">
+                    <span class="product-brand">{{ product.brand }}</span>
+                    <h1>{{ product.product_name }}</h1>
+                    {% if product.subtitle %}<p class="product-subtitle">{{ product.subtitle }}</p>{% endif %}
+                    <p class="product-tagline">{{ product.description }}</p>
+                    {% if product.discount_percentage %}<span class="badge text-bg-danger mb-2">{{ product.discount_percentage|floatformat:'0' }}% OFF</span>{% endif %}
+                    <div class="product-price">{% if product.discount_percentage %}<del class="text-muted fs-5 me-2">₹{{ product.price }}</del>₹{{ product.discounted_price|floatformat:2 }}{% else %}₹{{ product.price }}{% endif %}</div>
+                    {% if product.special_feature %}<p class="text-muted mb-0"><strong>Special feature:</strong> {{ product.special_feature|linebreaksbr }}</p>{% endif %}
+                    <p class="price-note">Inclusive of all taxes · Free shipping</p>
+
+                    <div class="detail-divider"></div>
+                    <div class="quick-specs">
+                        {% if product.dpi %}<div><span>Sensor</span><strong>{{ product.dpi }}</strong></div>{% endif %}
+                        {% if product.connectivity %}<div><span>Connection</span><strong>{{ product.connectivity }}</strong></div>{% endif %}
+                        {% if product.battery_life %}<div><span>Battery life</span><strong>{{ product.battery_life }}</strong></div>{% endif %}
+                        {% if product.weight %}<div><span>Weight</span><strong>{{ product.weight }}</strong></div>{% endif %}
+                    </div>
+
+                    {% if product.stock > 0 and user.is_staff %}
+                    <p class="staff-purchase-note">Purchases are unavailable for staff accounts. Sign in with a customer account to add this item to your cart.</p>
+                    {% elif product.stock > 0 and user.is_authenticated %}
+                    <form method="post" action="{% url 'add_to_cart' product.product_id %}" class="buy-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{% url 'product_detail' product.product_id %}">
+                        <button class="blue-buy-button" type="submit">Add to cart <span>→</span></button>
+                    </form>
+                    <small class="stock-note">{{ product.stock }} units ready to ship</small>
+                    {% elif product.stock > 0 %}
+                    <a class="blue-buy-button sign-in-buy-button" href="{% url 'login' %}?next={% url 'product_detail' product.product_id %}">Sign in to add to cart <span>→</span></a>
+                    <small class="stock-note">{{ product.stock }} units ready to ship</small>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100" disabled>Out of Stock</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <section class="spec-section mt-5">
+            <div class="section-heading"><span class="eyebrow blue-eyebrow">TECHNICAL PROFILE</span><h2 class="mt-2">Built for your best game.</h2></div>
+            <div class="row g-3 mt-2">
+                {% if product.dpi %}<div class="col-6 col-md-4"><div class="spec-tile"><span>DPI</span><strong>{{ product.dpi }}</strong></div></div>{% endif %}
+                {% if product.connectivity %}<div class="col-6 col-md-4"><div class="spec-tile"><span>CONNECTIVITY</span><strong>{{ product.connectivity }}</strong></div></div>{% endif %}
+                {% if product.battery_life %}<div class="col-6 col-md-4"><div class="spec-tile"><span>BATTERY LIFE</span><strong>{{ product.battery_life }}</strong></div></div>{% endif %}
+                {% if product.weight %}<div class="col-6 col-md-4"><div class="spec-tile"><span>WEIGHT</span><strong>{{ product.weight }}</strong></div></div>{% endif %}
+                {% if product.buttons %}<div class="col-6 col-md-4"><div class="spec-tile"><span>BUTTONS</span><strong>{{ product.buttons }}</strong></div></div>{% endif %}
+                {% if product.rgb %}<div class="col-6 col-md-4"><div class="spec-tile"><span>LIGHTING</span><strong>{{ product.rgb }}</strong></div></div>{% endif %}
+            </div>
+        </section>
+
+        <section class="reviews-section mt-5 pt-4" id="reviews">
+            <div class="section-heading d-flex flex-wrap justify-content-between align-items-end gap-3">
+                <div><span class="eyebrow blue-eyebrow">PLAYER FEEDBACK</span><h2 class="mt-2 mb-1">Reviews</h2></div>
+                {% if review_count %}
+                <div class="reviews-summary"><span class="star-display" style="--rating: {{ review_average }}" role="img" aria-label="{{ review_average|floatformat:1 }} out of 5 stars">★★★★★</span><strong>{{ review_average|floatformat:1 }} / 5</strong><span>{{ review_count }} review{{ review_count|pluralize }}</span></div>
+                {% else %}
+                <p class="text-muted mb-0">No reviews yet</p>
+                {% endif %}
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-lg-5">
+                    <div class="review-form-panel">
+                        <h3>{% if review_form.instance.pk %}Update your review{% else %}Add a review{% endif %}</h3>
+                        {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'add_review' product.product_id %}">
+                            {% csrf_token %}
+                            <fieldset class="mb-3">
+                                <legend class="form-label">Rate this product</legend>
+                                <div class="star-rating" role="radiogroup" aria-label="Choose a rating from 1 to 5 stars">
+                                    {% for option in rating_options %}
+                                    <label class="star-choice{% if option.checked %} is-selected{% endif %}" data-rating="{{ option.value }}">
+                                        <input type="radio" name="rating" value="{{ option.value }}" aria-label="{{ option.value }} star{{ option.value|pluralize }}"{% if option.checked %} checked{% endif %} required>
+                                        <span aria-hidden="true">★</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <output class="star-rating-value" aria-live="polite">{% if current_rating %}{{ current_rating }} / 5{% else %}0 / 5{% endif %}</output>
+                            </fieldset>
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ review_form.comment.id_for_label }}">Your review</label>
+                                {{ review_form.comment }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">{% if review_form.instance.pk %}Update review{% else %}Submit review{% endif %}</button>
+                        </form>
+                        {% else %}
+                        <p class="text-muted">Sign in to rate and review this product.</p>
+                        <a class="btn btn-outline-primary" href="{% url 'login' %}?next={{ request.path }}%23reviews">Sign in to review</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="review-list">
+                        {% for review in reviews %}
+                        <article class="review-entry">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div><strong>{{ review.user.name|default:review.user.email }}</strong><span class="star-display review-rating" style="--rating: {{ review.rating }}" role="img" aria-label="{{ review.rating }} out of 5 stars">★★★★★</span><span class="review-rating-number">{{ review.rating }} / 5</span></div>
+                                <time class="text-muted small" datetime="{{ review.created_at|date:'c' }}">{{ review.created_at|date:'M j, Y' }}</time>
+                            </div>
+                            <p class="mb-0 mt-2">{{ review.comment|linebreaksbr }}</p>
+                        </article>
+                        {% empty %}
+                        <p class="text-muted mb-0">Be the first to share your experience with this mouse.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {% if related_products %}
+        <section class="related-section mt-5 pt-4">
+            <div class="section-heading d-flex justify-content-between align-items-end"><div><span class="eyebrow blue-eyebrow">YOU MAY ALSO LIKE</span><h2 class="mt-2">More from {{ product.category.category_name }}</h2></div><a href="{% url 'product_list' %}?category={{ product.category.category_id }}" class="text-decoration-none fw-bold">View category →</a></div>
+            <div class="row g-4 mt-2">
+                {% for related in related_products %}
+                <div class="col-sm-6 col-lg-3"><a class="related-card" href="{% url 'product_detail' related.product_id %}"><img src="{{ related.image_url }}" alt="{{ related.product_name }}"><span>{{ related.brand }}</span><strong>{{ related.product_name }}</strong><b>₹{{ related.price }}</b></a></div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</main>
+<script>
+    document.querySelectorAll('[data-gallery-src]').forEach(function (thumbnail) {
+        thumbnail.addEventListener('click', function () {
+            const mainImage = document.querySelector('[data-product-main-image]');
+            mainImage.src = thumbnail.dataset.gallerySrc;
+            mainImage.alt = thumbnail.dataset.galleryAlt;
+
+            document.querySelectorAll('[data-gallery-src]').forEach(function (item) {
+                const isActive = item === thumbnail;
+                item.classList.toggle('is-active', isActive);
+                item.setAttribute('aria-pressed', String(isActive));
+            });
+        });
+    });
+
+    document.querySelectorAll('.star-rating').forEach(function (ratingGroup) {
+        const choices = Array.from(ratingGroup.querySelectorAll('.star-choice'));
+
+        function highlight(value, className) {
+            choices.forEach(function (choice) {
+                choice.classList.toggle(className, Number(choice.dataset.rating) <= value);
+            });
+        }
+
+        const ratingValue = ratingGroup.parentElement.querySelector('.star-rating-value');
+        const selectedRating = ratingGroup.querySelector('input:checked');
+        if (selectedRating) {
+            ratingValue.textContent = selectedRating.value + ' / 5';
+        }
+
+        choices.forEach(function (choice) {
+            const input = choice.querySelector('input');
+            choice.addEventListener('mouseenter', function () {
+                highlight(Number(choice.dataset.rating), 'is-hovered');
+            });
+            input.addEventListener('focus', function () {
+                highlight(Number(choice.dataset.rating), 'is-hovered');
+            });
+            input.addEventListener('change', function () {
+                highlight(Number(input.value), 'is-selected');
+                ratingValue.textContent = input.value + ' / 5';
+            });
+        });
+
+        ratingGroup.addEventListener('mouseleave', function () {
+            choices.forEach(function (choice) {
+                choice.classList.remove('is-hovered');
+            });
+        });
+    });
+</script>
+{% endblock %}

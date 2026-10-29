@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Home | GamingMouse{% endblock %}
+
+{% block content %}
+<section class="hero-section bg-dark text-white reveal-section">
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-8 col-xl-7">
+                <span class="eyebrow hero-eyebrow">BUILT FOR THE NEXT MATCH</span>
+                <h1 class="display-3 fw-bold mt-3">Move faster.<br><span class="accent-text">Aim sharper.</span></h1>
+                <p class="lead text-white-50 mt-4">Gaming mice engineered for clutch moments, long sessions, and the kind of precision you can feel in every flick.</p>
+                <div class="d-flex gap-3 mt-4">
+                    <a href="{% url 'product_list' %}" class="btn btn-primary btn-lg">Explore the collection</a>
+                    <a href="#why-us" class="btn btn-outline-light btn-lg">Why GamingMouse</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="why-us" class="py-5 feature-strip reveal-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4 reveal-item"><div class="feature-item"><span>01</span><h5>Sensor-first</h5><p>Reliable tracking with no wasted motion.</p></div></div>
+            <div class="col-md-4 reveal-item"><div class="feature-item"><span>02</span><h5>Comfort-led</h5><p>Shapes designed for hours at your desk.</p></div></div>
+            <div class="col-md-4 reveal-item"><div class="feature-item"><span>03</span><h5>Setup-ready</h5><p>Wireless freedom, RGB style, zero fuss.</p></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 category-section reveal-section">
+    <div class="container">
+        <div class="section-heading d-flex justify-content-between align-items-end mb-4">
+            <div><span class="eyebrow">FIND YOUR ADVANTAGE</span><h2 class="mt-2">Shop by play style</h2></div>
+            <a href="{% url 'product_list' %}" class="text-decoration-none fw-bold">View all products →</a>
+        </div>
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-md-4 reveal-item">
+                <div class="category-tile h-100">
+                    <div><span class="category-number">0{{ forloop.counter }}</span><h5>{{ category.category_name }}</h5></div>
+                    <p>{{ category.description|default:'Explore premium gaming gear.' }}</p>
+                    <a href="{% url 'product_list' %}?category={{ category.category_id }}">Explore →</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-md-4 reveal-item"><div class="category-tile"><span class="category-number">01</span><h5>Competitive FPS</h5><p>Lightweight control for fast flicks.</p><a href="{% url 'product_list' %}">Explore →</a></div></div>
+            <div class="col-md-4 reveal-item"><div class="category-tile"><span class="category-number">02</span><h5>Wireless freedom</h5><p>Clean desks and zero cable drag.</p><a href="{% url 'product_list' %}">Explore →</a></div></div>
+            <div class="col-md-4 reveal-item"><div class="category-tile"><span class="category-number">03</span><h5>RGB setups</h5><p>Performance with a little more glow.</p><a href="{% url 'product_list' %}">Explore →</a></div></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="py-5 product-section reveal-section">
+    <div class="container">
+        <div class="section-heading d-flex justify-content-between align-items-end mb-4">
+            <div><span class="eyebrow">THE CURRENT LOADOUT</span><h2 class="mt-2">Four ways to play</h2></div>
+            <a href="{% url 'product_list' %}" class="text-decoration-none fw-bold">View all {{ product_count }} products →</a>
+        </div>
+        <div class="row g-4">
+            {% for product in featured_products %}
+            <div class="col-sm-6 col-lg-3 reveal-item">
+                <div class="product-card h-100">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" alt="{{ product.product_name }}">
+                    {% elif product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.product_name }}">
+                    {% else %}
+                        <img src="https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=800&q=80" alt="Gaming mouse">
+                    {% endif %}
+                    <div class="product-card-body">
+                        <span class="product-brand">{{ product.brand }}</span>
+                        <p class="product-card-subtitle">{{ product.subtitle|default_if_none:'' }}</p>
+                        <div class="product-card-discount-slot">{% if product.discount_percentage %}<span class="badge text-bg-danger">{{ product.discount_percentage|floatformat:'0' }}% OFF</span>{% endif %}</div>
+                        <div class="product-card-price"><strong>{% if product.discount_percentage %}<del class="text-muted fw-normal me-1">₹{{ product.price }}</del>₹{{ product.discounted_price|floatformat:2 }}{% else %}₹{{ product.price }}{% endif %}</strong></div>
+                        <div class="product-card-view"><a href="{% url 'product_detail' product.product_id %}">View →</a></div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center text-muted">Products are being loaded.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="about-section py-5 reveal-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 reveal-item"><img class="about-image" src="https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=1200&q=85" alt="Gaming mouse and gaming setup"></div>
+            <div class="col-lg-6 reveal-item"><span class="eyebrow">ABOUT GAMINGMOUSE</span><h2 class="mt-3">Your hand is the interface.</h2><p class="lead text-muted">We curate gaming mice around the moments that matter: a clean first shot, a perfect tracking line, and a setup that feels unmistakably yours.</p><p class="text-muted">From competitive ultralights to wireless RGB workhorses, every product is selected for control, comfort, and character.</p><a href="{% url 'product_list' %}" class="btn btn-dark mt-2">Meet the collection</a></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
